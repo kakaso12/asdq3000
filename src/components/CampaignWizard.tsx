@@ -26,7 +26,7 @@ interface CampaignFormData {
   message_template: string;
   message_variables: Record<string, any>;
   promo_code?: string;
-  promo_discount_type?: 'percentage' | 'fixed_amount';
+  promo_discount_type?: 'percent' | 'fixed';
   promo_discount_value?: number;
   promo_min_spend?: number;
   promo_max_uses?: number;
@@ -232,7 +232,7 @@ const CampaignWizard: React.FC = () => {
           campaign_id: campaign.id,
           restaurant_id: restaurant.id,
           code: formData.promo_code,
-          discount_type: formData.promo_discount_type || 'percentage',
+          discount_type: formData.promo_discount_type || 'percent',
           discount_value: formData.promo_discount_value || 0,
           min_spend: formData.promo_min_spend || 0,
           max_uses: formData.promo_max_uses,
@@ -544,7 +544,7 @@ const CampaignWizard: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, promo_discount_value: parseFloat(e.target.value) })}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E6A85C] focus:border-transparent"
                 min="0"
-                step={formData.promo_discount_type === 'percentage' ? '1' : '0.01'}
+                step={formData.promo_discount_type === 'percent' ? '1' : '0.01'}
               />
             </div>
           </div>
