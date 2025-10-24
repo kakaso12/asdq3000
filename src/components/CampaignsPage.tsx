@@ -3,7 +3,7 @@ import {
   Plus, Send, Calendar, Users, TrendingUp, Filter, Search,
   Mail, MessageSquare, Bell, Smartphone, Eye, Trash2, Edit3,
   Play, Pause, Copy, BarChart3, CheckCircle, XCircle, Clock,
-  Target, Zap, Settings, AlertCircle, DollarSign, Percent
+  Target, Zap, Settings, AlertCircle, DollarSign, Percent, TestTube, Loader2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { CampaignService, Campaign, CampaignMetrics } from '../services/campaignService';
@@ -18,6 +18,9 @@ const CampaignsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterChannel, setFilterChannel] = useState('all');
+  const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendSuccess, setSendSuccess] = useState<string | null>(null);
   const { restaurant } = useAuth();
   const navigate = useNavigate();
 
@@ -38,6 +41,32 @@ const CampaignsPage: React.FC = () => {
       console.error('Error fetching campaigns:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendCampaign = async (campaignId: string, testMode: boolean = false) => {
+    if (!restaurant) return;
+
+    const confirmMessage = testMode
+      ? 'Send a test message to yourself?'
+      : 'Are you sure you want to send this campaign? This action cannot be undone.';
+
+    if (!confirm(confirmMessage)) return;
+
+    try {
+      setSendingCampaignId(campaignId);
+      setSendError(null);
+      setSendSuccess(null);
+
+      await CampaignService.sendCampaign(campaignId, testMode);
+
+      setSendSuccess(testMode ? 'Test message sent successfully!' : 'Campaign sent successfully!');
+      fetchCampaigns();
+    } catch (error: any) {
+      console.error('Error sending campaign:', error);
+      setSendError(error.message || 'Failed to send campaign');
+    } finally {
+      setSendingCampaignId(null);
     }
   };
 
@@ -162,6 +191,32 @@ const CampaignsPage: React.FC = () => {
         </div>
       </div>
 
+      {sendSuccess && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+          <span className="text-green-700">{sendSuccess}</span>
+          <button
+            onClick={() => setSendSuccess(null)}
+            className="ml-auto text-green-600 hover:text-green-700"
+          >
+            <XCircle className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {sendError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+          <span className="text-red-700">{sendError}</span>
+          <button
+            onClick={() => setSendError(null)}
+            className="ml-auto text-red-600 hover:text-red-700"
+          >
+            <XCircle className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl p-6 border border-gray-200">
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="flex-1">
@@ -279,6 +334,36 @@ const CampaignsPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {(campaign.status === 'draft' || campaign.status === 'scheduled') && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSendCampaign(campaign.id, true);
+                            }}
+                            disabled={sendingCampaignId === campaign.id}
+                            className="px-3 py-2 text-sm border border-blue-300 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                          >
+                            <TestTube className="h-3 w-3" />
+                            Test
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSendCampaign(campaign.id, false);
+                            }}
+                            disabled={sendingCampaignId === campaign.id}
+                            className="px-3 py-2 text-sm bg-gradient-to-r from-[#E6A85C] to-[#E85A9B] text-white hover:shadow-md rounded-lg transition-all disabled:opacity-50 flex items-center gap-1"
+                          >
+                            {sendingCampaignId === campaign.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Send className="h-3 w-3" />
+                            )}
+                            Send
+                          </button>
+                        </>
+                      )}
                       {campaign.status === 'draft' && (
                         <button
                           onClick={(e) => {

@@ -32,6 +32,7 @@ import StarterPackPage from './components/StarterPackPage';
 import CampaignsPage from './components/CampaignsPage';
 import CampaignWizard from './components/CampaignWizard';
 import CampaignSettings from './components/CampaignSettings';
+import CampaignMonitoring from './components/CampaignMonitoring';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -146,13 +147,10 @@ function App() {
             <Route path="rewards" element={<RewardsPage />} />
             <Route path="campaigns" element={<CampaignsPage />} />
             <Route path="campaigns/create" element={<CampaignWizard />} />
-            <Route path="campaigns/:campaignId/edit" element={<CampaignWizard />} />
-            <Route path="campaigns/:campaignId" element={<CampaignWizard />} />
-
-            <Route path="campaigns/:campaignId/metrics" element={<CampaignWizard />} />
-
-
             <Route path="campaigns/settings" element={<CampaignSettings />} />
+            <Route path="campaigns/:campaignId/edit" element={<CampaignWizard />} />
+            <Route path="campaigns/:campaignId/metrics" element={<CampaignMonitoring />} />
+            <Route path="campaigns/:campaignId" element={<CampaignWizard />} />
             <Route path="menu-items" element={<MenuItemsPage />} />
             <Route path="loyalty-config" element={<LoyaltyConfigPage />} />
             <Route path="branches" element={<BranchManagement />} />

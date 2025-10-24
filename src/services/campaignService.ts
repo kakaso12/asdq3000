@@ -100,14 +100,33 @@ export class CampaignService {
     return data || [];
   }
 
-  static async getCampaign(campaignId: string): Promise<Campaign | null> {
+  static async getCampaign(restaurantId: string, campaignId: string): Promise<Campaign | null> {
     const { data, error } = await supabase
       .from('campaigns')
       .select('*')
       .eq('id', campaignId)
+      .eq('restaurant_id', restaurantId)
       .maybeSingle();
 
     if (error) throw new Error(error.message);
+    return data;
+  }
+
+  static async sendCampaign(campaignId: string, testMode: boolean = false): Promise<any> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { data, error } = await supabase.functions.invoke('send-campaign', {
+      body: {
+        campaignId,
+        testMode,
+      },
+    });
+
+    if (error) throw new Error(error.message || 'Failed to send campaign');
+
     return data;
   }
 

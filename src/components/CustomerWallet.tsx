@@ -84,6 +84,8 @@ const CustomerWallet: React.FC<CustomerWalletProps> = ({ isDemo = false, onClose
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [showQRCode, setShowQRCode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [consents, setConsents] = useState<any>(null);
+  const [savingConsents, setSavingConsents] = useState(false);
   
 
   useEffect(() => {
@@ -137,21 +139,39 @@ const CustomerWallet: React.FC<CustomerWalletProps> = ({ isDemo = false, onClose
     try {
       setCustomer(customerData);
       setShowOnboarding(false);
-      
+
       if (restaurant) {
-        const [rewardsData, transactionsData, promosData] = await Promise.all([
+        const [rewardsData, transactionsData, promosData, consentData] = await Promise.all([
           RewardService.getAvailableRewards(restaurant.id, customerData.id),
           CustomerService.getCustomerTransactions(restaurant.id, customerData.id),
-          CampaignService.getActivePromosForCustomer(restaurant.id, customerData.id).catch(() => [])
+          CampaignService.getActivePromosForCustomer(restaurant.id, customerData.id).catch(() => []),
+          CustomerService.getCustomerConsent(customerData.id, restaurant.id).catch(() => null)
         ]);
 
         setRewards(rewardsData);
         setTransactions(transactionsData);
         setActivePromos(promosData);
+        setConsents(consentData);
       }
     } catch (err: any) {
       console.error('Error completing onboarding:', err);
       setError('Failed to load customer data');
+    }
+  };
+
+  const handleConsentUpdate = async (consentType: string, value: boolean) => {
+    if (!customer || !restaurant) return;
+
+    setSavingConsents(true);
+    try {
+      const updatedConsents = { ...consents, [consentType]: value };
+      await CustomerService.updateCustomerConsent(customer.id, restaurant.id, updatedConsents);
+      setConsents(updatedConsents);
+    } catch (err: any) {
+      console.error('Error updating consent:', err);
+      setError('Failed to update preferences');
+    } finally {
+      setSavingConsents(false);
     }
   };
 
@@ -700,20 +720,114 @@ const CustomerWallet: React.FC<CustomerWalletProps> = ({ isDemo = false, onClose
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">{tierInfo.name} Member</h3>
                   <p className="text-sm text-gray-600">
-                    {nextTierProgress.nextTier 
+                    {nextTierProgress.nextTier
                       ? `${nextTierProgress.pointsNeeded} points to ${nextTierProgress.nextTier}`
                       : 'Highest tier achieved!'
                     }
                   </p>
                 </div>
               </div>
-              
+
               {nextTierProgress.nextTier && (
                 <div className="w-full bg-white rounded-full h-3">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-[#E6A85C] to-[#E85A9B] h-3 rounded-full transition-all duration-500"
                     style={{ width: `${nextTierProgress.progress}%` }}
                   />
+                </div>
+              )}
+            </div>
+
+            {/* Communication Preferences */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200">
+              <div className="flex items-center gap-2 mb-4">
+                <MessageSquare className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-bold text-gray-900">Communication Preferences</h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Choose how you'd like to receive updates, offers, and rewards
+              </p>
+
+              {consents ? (
+                <div className="space-y-3">
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <MessageSquare className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">WhatsApp</p>
+                        <p className="text-xs text-gray-500">Get instant updates on WhatsApp</p>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={consents.whatsapp || false}
+                      onChange={(e) => handleConsentUpdate('whatsapp', e.target.checked)}
+                      disabled={savingConsents}
+                      className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">Email</p>
+                        <p className="text-xs text-gray-500">Receive newsletters and special offers</p>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={consents.email || false}
+                      onChange={(e) => handleConsentUpdate('email', e.target.checked)}
+                      disabled={savingConsents}
+                      className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-5 w-5 text-purple-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">SMS</p>
+                        <p className="text-xs text-gray-500">Text message notifications</p>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={consents.sms || false}
+                      onChange={(e) => handleConsentUpdate('sms', e.target.checked)}
+                      disabled={savingConsents}
+                      className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Bell className="h-5 w-5 text-orange-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">Push Notifications</p>
+                        <p className="text-xs text-gray-500">In-app notifications</p>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={consents.push_notifications || false}
+                      onChange={(e) => handleConsentUpdate('push_notifications', e.target.checked)}
+                      disabled={savingConsents}
+                      className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    />
+                  </label>
+
+                  {savingConsents && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving preferences...
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400 mx-auto" />
                 </div>
               )}
             </div>

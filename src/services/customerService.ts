@@ -75,7 +75,11 @@ export class CustomerService {
     }
   }
 
-  static async createCustomer(restaurantId: string, customerData: Omit<CustomerInsert, 'restaurant_id'>): Promise<Customer> {
+  static async createCustomer(
+    restaurantId: string,
+    customerData: Omit<CustomerInsert, 'restaurant_id'>,
+    consents?: { whatsapp?: boolean; email?: boolean; sms?: boolean; push?: boolean }
+  ): Promise<Customer> {
     if (!restaurantId) {
       throw new Error('Restaurant not found. Please create a restaurant first.');
     }
@@ -98,7 +102,16 @@ export class CustomerService {
       throw new Error(error.message);
     }
 
-    await this.initializeCustomerConsent(data.id, restaurantId);
+    if (consents) {
+      await this.updateCustomerConsent(data.id, restaurantId, {
+        whatsapp: consents.whatsapp ?? false,
+        email: consents.email ?? true,
+        sms: consents.sms ?? false,
+        push_notifications: consents.push ?? true,
+      });
+    } else {
+      await this.initializeCustomerConsent(data.id, restaurantId);
+    }
 
     return data;
   }

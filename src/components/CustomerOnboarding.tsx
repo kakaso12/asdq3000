@@ -49,6 +49,12 @@ const CustomerOnboarding: React.FC<CustomerOnboardingProps> = ({ restaurant, onC
     phone: '',
     birthDate: ''
   });
+  const [consents, setConsents] = useState({
+    whatsapp: true,
+    email: true,
+    sms: false,
+    push: true
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [existingCustomer, setExistingCustomer] = useState<Customer | null>(null);
@@ -121,7 +127,7 @@ const CustomerOnboarding: React.FC<CustomerOnboardingProps> = ({ restaurant, onC
         email: formData.email,
         phone: formData.phone || undefined,
         date_of_birth: formData.birthDate || undefined
-      });
+      }, consents);
 
       onComplete(newCustomer);
     } catch (err: any) {
@@ -401,6 +407,87 @@ const CustomerOnboarding: React.FC<CustomerOnboardingProps> = ({ restaurant, onC
                               className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                             />
                           </div>
+                        </div>
+
+                        {/* Communication Preferences */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <MessageSquare className="h-5 w-5 text-blue-600" />
+                            <h3 className="font-semibold text-gray-900">Stay Connected</h3>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Choose how you'd like to receive exclusive offers, rewards, and updates
+                          </p>
+
+                          <div className="space-y-3">
+                            <label className="flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
+                              <div className="flex items-center gap-3">
+                                <MessageSquare className="h-5 w-5 text-green-600" />
+                                <div>
+                                  <p className="font-medium text-gray-900">WhatsApp</p>
+                                  <p className="text-xs text-gray-500">Get instant updates</p>
+                                </div>
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={consents.whatsapp}
+                                onChange={(e) => setConsents(prev => ({ ...prev, whatsapp: e.target.checked }))}
+                                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              />
+                            </label>
+
+                            <label className="flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
+                              <div className="flex items-center gap-3">
+                                <Mail className="h-5 w-5 text-blue-600" />
+                                <div>
+                                  <p className="font-medium text-gray-900">Email</p>
+                                  <p className="text-xs text-gray-500">Receive newsletters & offers</p>
+                                </div>
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={consents.email}
+                                onChange={(e) => setConsents(prev => ({ ...prev, email: e.target.checked }))}
+                                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              />
+                            </label>
+
+                            <label className="flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
+                              <div className="flex items-center gap-3">
+                                <Phone className="h-5 w-5 text-purple-600" />
+                                <div>
+                                  <p className="font-medium text-gray-900">SMS</p>
+                                  <p className="text-xs text-gray-500">Text message updates</p>
+                                </div>
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={consents.sms}
+                                onChange={(e) => setConsents(prev => ({ ...prev, sms: e.target.checked }))}
+                                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              />
+                            </label>
+
+                            <label className="flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
+                              <div className="flex items-center gap-3">
+                                <Bell className="h-5 w-5 text-orange-600" />
+                                <div>
+                                  <p className="font-medium text-gray-900">Push Notifications</p>
+                                  <p className="text-xs text-gray-500">App notifications</p>
+                                </div>
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={consents.push}
+                                onChange={(e) => setConsents(prev => ({ ...prev, push: e.target.checked }))}
+                                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              />
+                            </label>
+                          </div>
+
+                          <p className="text-xs text-gray-500 mt-3">
+                            You can change these preferences anytime in your profile settings
+                          </p>
                         </div>
                       </motion.div>
                     )}

@@ -4,6 +4,7 @@ import {
   Mail, MessageSquare, Smartphone, Bell, Key, Lock, Zap, TestTube
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface ProviderConfig {
   provider: string;
@@ -67,6 +68,31 @@ const CampaignSettings: React.FC = () => {
 
     try {
       setLoading(true);
+
+      const { data: configs, error } = await supabase
+        .from('channel_provider_configs')
+        .select('*')
+        .eq('restaurant_id', restaurant.id);
+
+      if (error) throw error;
+
+      if (configs && configs.length > 0) {
+        const updatedProviders = { ...providers };
+
+        configs.forEach((config) => {
+          const channel = config.channel as keyof ChannelProviders;
+          if (updatedProviders[channel]) {
+            updatedProviders[channel] = {
+              provider: config.provider,
+              enabled: config.is_enabled,
+              apiKey: '••••••••',
+              config: config.config_json || {},
+            };
+          }
+        });
+
+        setProviders(updatedProviders);
+      }
     } catch (error: any) {
       console.error('Error loading settings:', error);
       setMessage({ type: 'error', text: 'Failed to load settings' });
@@ -82,7 +108,31 @@ const CampaignSettings: React.FC = () => {
       setSaving(true);
       setMessage({ type: '', text: '' });
 
+      for (const [channel, config] of Object.entries(providers)) {
+        if (config.apiKey && config.apiKey !== '••••••••') {
+          await supabase.from('channel_provider_configs').upsert({
+            restaurant_id: restaurant.id,
+            channel: channel,
+            provider: config.provider,
+            api_key_encrypted: config.apiKey,
+            config_json: config.config,
+            is_enabled: config.enabled,
+          });
+        } else if (config.apiKey === '••••••••') {
+          await supabase
+            .from('channel_provider_configs')
+            .update({
+              provider: config.provider,
+              config_json: config.config,
+              is_enabled: config.enabled,
+            })
+            .eq('restaurant_id', restaurant.id)
+            .eq('channel', channel);
+        }
+      }
+
       setMessage({ type: 'success', text: 'Settings saved successfully' });
+      await loadSettings();
     } catch (error: any) {
       console.error('Error saving settings:', error);
       setMessage({ type: 'error', text: error.message || 'Failed to save settings' });
@@ -94,9 +144,28 @@ const CampaignSettings: React.FC = () => {
   const handleTest = async (channel: string) => {
     if (!restaurant) return;
 
+    const testPhoneNumber = prompt('Enter test phone number (with country code):');
+    const testEmail = prompt('Enter test email:');
+
+    if (!testPhoneNumber && !testEmail) {
+      setMessage({ type: 'error', text: 'Please provide a test contact' });
+      return;
+    }
+
     try {
       setTesting(channel);
       setMessage({ type: '', text: '' });
+
+      const { data, error } = await supabase.functions.invoke('send-campaign', {
+        body: {
+          testMode: true,
+          testPhoneNumber,
+          testEmail,
+          channel,
+        },
+      });
+
+      if (error) throw error;
 
       setMessage({ type: 'success', text: `Test message sent successfully via ${channel}` });
     } catch (error: any) {
