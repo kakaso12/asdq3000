@@ -15,6 +15,8 @@ import { CampaignService } from '../services/campaignService';
 import CustomerOnboarding from './CustomerOnboarding';
 import CustomerRedemptionModal from './CustomerRedemptionModal';
 import LoadingBar from './LoadingBar';
+import { MessageSquare } from 'lucide-react';
+
 
 interface Restaurant {
   id: string;
