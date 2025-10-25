@@ -58,14 +58,14 @@ const CampaignsPage: React.FC = () => {
       setSendError(null);
       setSendSuccess(null);
 
-      if (testMode) {
-  const testPhoneNumber = prompt('Enter your WhatsApp number (include country code, e.g. +60123456789):');
-  if (!testPhoneNumber) return alert('Phone number is required to send a test message.');
-
-  await CampaignService.sendCampaign(campaignId, testMode, testPhoneNumber);
+ if (testMode) {
+  const testPhoneNumber = prompt('Enter your WhatsApp number (e.g. +60123456789):');
+  if (!testPhoneNumber) return alert('Phone number is required.');
+  await CampaignService.sendCampaign(campaignId, true, testPhoneNumber);
 } else {
   await CampaignService.sendCampaign(campaignId, false);
 }
+
 
 
       setSendSuccess(testMode ? 'Test message sent successfully!' : 'Campaign sent successfully!');
