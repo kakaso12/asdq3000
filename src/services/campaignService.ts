@@ -112,23 +112,30 @@ export class CampaignService {
     return data;
   }
 
-  static async sendCampaign(campaignId: string, testMode: boolean = false): Promise<any> {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      throw new Error('User not authenticated');
-    }
-
-    const { data, error } = await supabase.functions.invoke('send-campaign', {
-      body: {
-        campaignId,
-        testMode,
-      },
-    });
-
-    if (error) throw new Error(error.message || 'Failed to send campaign');
-
-    return data;
+static async sendCampaign(
+  campaignId: string,
+  testMode: boolean = false,
+  testPhoneNumber?: string
+): Promise<any> {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) {
+    throw new Error('User not authenticated');
   }
+
+  const body: Record<string, any> = { campaignId, testMode };
+  if (testMode && testPhoneNumber) {
+    body.testPhoneNumber = testPhoneNumber; // 👈 add this
+  }
+
+  const { data, error } = await supabase.functions.invoke('send-campaign', {
+    body,
+  });
+
+  if (error) throw new Error(error.message || 'Failed to send campaign');
+
+  return data;
+}
+
 
   static async createCampaign(restaurantId: string, campaign: Partial<Campaign>): Promise<Campaign> {
     const { data: userData } = await supabase.auth.getUser();
