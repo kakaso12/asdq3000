@@ -38,7 +38,7 @@ interface CampaignFormData {
 const STORAGE_KEY = 'campaign_wizard_draft';
 
 const CampaignWizard: React.FC = () => {
-  const { campaignId } = useParams();
+  const { campaignId: routeCampaignId } = useParams();
   const navigate = useNavigate();
   const { restaurant } = useAuth();
   const [currentStep, setCurrentStep] = useState<Step>('basic');
@@ -47,11 +47,12 @@ const CampaignWizard: React.FC = () => {
   const [estimatedAudience, setEstimatedAudience] = useState(0);
   const [availableTags, setAvailableTags] = useState<any[]>([]);
   const [includePromo, setIncludePromo] = useState(false);
+  const [savedCampaignId, setSavedCampaignId] = useState<string | null>(routeCampaignId || null);
 
   const [formData, setFormData] = useState<CampaignFormData>(() => {
     // Try to restore from localStorage
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && !campaignId) {
+    if (saved && !routeCampaignId) {
       try {
         return JSON.parse(saved);
       } catch (e) {
@@ -85,10 +86,10 @@ const CampaignWizard: React.FC = () => {
 
   // Save to localStorage on every form change
   useEffect(() => {
-    if (!campaignId) {
+    if (!routeCampaignId) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
     }
-  }, [formData, campaignId]);
+  }, [formData, routeCampaignId]);
 
   useEffect(() => {
     if (restaurant) {
@@ -195,10 +196,11 @@ const CampaignWizard: React.FC = () => {
         status: 'draft' as const,
       };
 
-      if (campaignId) {
-        await CampaignService.updateCampaign(restaurant.id, campaignId, campaignData);
+      if (savedCampaignId) {
+        await CampaignService.updateCampaign(restaurant.id, savedCampaignId, campaignData);
       } else {
-        await CampaignService.createCampaign(restaurant.id, campaignData);
+        const newCampaign = await CampaignService.createCampaign(restaurant.id, campaignData);
+        setSavedCampaignId(newCampaign.id);
       }
 
       localStorage.removeItem(STORAGE_KEY);
@@ -220,12 +222,16 @@ const CampaignWizard: React.FC = () => {
 
       const campaignData = {
         ...formData,
-        status: formData.type === 'one_time' ? 'sending' as const : 'scheduled' as const,
+        status: formData.type === 'one_time' ? 'draft' as const : 'scheduled' as const,
       };
 
-      const campaign = campaignId
-        ? await CampaignService.updateCampaign(restaurant.id, campaignId, campaignData)
+      const campaign = savedCampaignId
+        ? await CampaignService.updateCampaign(restaurant.id, savedCampaignId, campaignData)
         : await CampaignService.createCampaign(restaurant.id, campaignData);
+
+      if (!savedCampaignId) {
+        setSavedCampaignId(campaign.id);
+      }
 
       if (includePromo && formData.promo_code) {
         await CampaignService.createPromoCode({
@@ -259,6 +265,10 @@ const CampaignWizard: React.FC = () => {
 
   const renderBasicInfo = () => (
     <div className="space-y-6">
+      <div className="mb-6 pb-6 border-b border-gray-200">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h2>
+        <p className="text-gray-600">Start by giving your campaign a name and choosing how you want to reach your customers.</p>
+      </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Campaign Name *
@@ -322,6 +332,18 @@ const CampaignWizard: React.FC = () => {
 
   const renderAudienceSelection = () => (
     <div className="space-y-6">
+      <div className="mb-6 pb-6 border-b border-gray-200">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Audience</h2>
+        <p className="text-gray-600">Select who should receive this campaign. You can target all customers or create a specific segment.</p>
+        {estimatedAudience > 0 && (
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <Users className="h-5 w-5 text-blue-600" />
+            <span className="text-sm font-medium text-blue-900">
+              Estimated reach: {estimatedAudience} customers
+            </span>
+          </div>
+        )}
+      </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">
           Select Audience

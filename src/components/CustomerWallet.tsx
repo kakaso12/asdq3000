@@ -153,7 +153,17 @@ const CustomerWallet: React.FC<CustomerWalletProps> = ({ isDemo = false, onClose
         setRewards(rewardsData);
         setTransactions(transactionsData);
         setActivePromos(promosData);
-        setConsents(consentData);
+
+        if (consentData) {
+          setConsents(consentData);
+        } else {
+          setConsents({
+            whatsapp: false,
+            email: true,
+            sms: false,
+            push_notifications: true,
+          });
+        }
       }
     } catch (err: any) {
       console.error('Error completing onboarding:', err);

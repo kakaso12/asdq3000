@@ -144,36 +144,7 @@ const CampaignSettings: React.FC = () => {
   const handleTest = async (channel: string) => {
     if (!restaurant) return;
 
-    const testPhoneNumber = prompt('Enter test phone number (with country code):');
-    const testEmail = prompt('Enter test email:');
-
-    if (!testPhoneNumber && !testEmail) {
-      setMessage({ type: 'error', text: 'Please provide a test contact' });
-      return;
-    }
-
-    try {
-      setTesting(channel);
-      setMessage({ type: '', text: '' });
-
-      const { data, error } = await supabase.functions.invoke('send-campaign', {
-        body: {
-          testMode: true,
-          testPhoneNumber,
-          testEmail,
-          channel,
-        },
-      });
-
-      if (error) throw error;
-
-      setMessage({ type: 'success', text: `Test message sent successfully via ${channel}` });
-    } catch (error: any) {
-      console.error('Error testing channel:', error);
-      setMessage({ type: 'error', text: error.message || `Failed to send test via ${channel}` });
-    } finally {
-      setTesting(null);
-    }
+    setMessage({ type: 'error', text: 'Channel testing is currently only available through campaign creation. Please create a test campaign and use the Test button there.' });
   };
 
   const toggleApiKeyVisibility = (key: string) => {
